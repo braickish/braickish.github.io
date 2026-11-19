@@ -37,7 +37,11 @@
     margin: 0 auto;
   }
   header { padding-top: clamp(48px, 12vh, 120px); }
-  .logo { display: block; width: 100%; height: auto; overflow: visible; }
+  .logo { display: block; width: 100%; height: auto; overflow: visible; cursor: ew-resize; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .logo.dragging { cursor: grabbing; }
+  .grip { cursor: grab; outline: none; }
+  .grip:focus-visible circle { stroke-width: 3; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .logo text {
     font-family: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
     font-weight: 800;
@@ -110,27 +114,47 @@
 <body>
 
 <header>
-  <h1 style="margin:0">
-    <svg class="logo" viewBox="0 0 1000 240" role="img" aria-label="Braickish">
+  <h1 class="sr-only">Braickish</h1>
+  <svg class="logo" id="logo" viewBox="0 0 1000 272" role="group" aria-label="Braickish logo: drag the seam to change how much is hand-drawn">
       <defs>
-        <!-- Hand-drawn half: wobble the edges with turbulence -->
-        <filter id="rough-a" x="-5%" y="-10%" width="110%" height="120%">
-          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="1"/>
-          <feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+        <!-- Pen and ink: wobble the shapes, soften, then re-harden the alpha so
+             edges pool and taper like ink from a nib. -->
+        <filter id="ink-line" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="1" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+          <feGaussianBlur in="d" stdDeviation="0.9"/>
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="7" intercept="-2.4"/>
+          </feComponentTransfer>
         </filter>
-        <filter id="rough-b" x="-5%" y="-10%" width="110%" height="120%">
-          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/>
-          <feDisplacementMap in="SourceGraphic" scale="4" xChannelSelector="G" yChannelSelector="R"/>
+        <filter id="ink-line-2" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="G" yChannelSelector="R" result="d"/>
+          <feGaussianBlur in="d" stdDeviation="0.7"/>
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="7" intercept="-2.6"/>
+          </feComponentTransfer>
         </filter>
-        <filter id="rough-hatch" x="-5%" y="-10%" width="110%" height="120%">
-          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="3"/>
-          <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+        <filter id="ink-hatch" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="3" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+          <feGaussianBlur in="d" stdDeviation="0.45"/>
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="4" intercept="-0.9"/>
+          </feComponentTransfer>
         </filter>
-        <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)">
-          <line x1="0" y1="0" x2="0" y2="9" stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round"/>
+        <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#0a0a0a" stroke-width="1.9"/>
         </pattern>
+        <pattern id="cross" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(48)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#0a0a0a" stroke-width="1.5"/>
+        </pattern>
+        <!-- Cross-hatch only the lower part of the letters, like shading -->
+        <mask id="shade" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="272">
+          <path d="M0 128 C 60 116, 120 140, 190 124 S 300 112, 360 132 S 470 142, 540 120 S 650 114, 720 134 S 850 140, 920 118 S 980 126, 1000 124 V 210 H 0 Z" fill="#fff"/>
+        </mask>
 
-        <!-- The diagonal split runs through the "ai" in the middle -->
+        <!-- Seam positions are set by the script; these are the defaults -->
         <clipPath id="hand-side">
           <polygon id="hand-poly" points="0,0 430,0 310,240 0,240"/>
         </clipPath>
@@ -141,20 +165,26 @@
         <text id="word" x="40" y="178" font-family="'Inter Tight', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="176" textLength="920" lengthAdjust="spacingAndGlyphs">Braickish</text>
       </defs>
 
-      <!-- Hand side: pencil guide, hatched fill, double sketchy outline -->
+      <!-- Hand side: pen and ink -->
       <g clip-path="url(#hand-side)">
-        <path d="M-10 179 C 120 182, 240 176, 430 180" fill="none" stroke="#0a0a0a" stroke-width="1.2" opacity="0.35" filter="url(#rough-b)"/>
-        <use href="#word" fill="url(#hatch)" filter="url(#rough-hatch)"/>
-        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="3.2" stroke-linejoin="round" filter="url(#rough-a)"/>
-        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linejoin="round" filter="url(#rough-b)" transform="translate(2 -1.5)"/>
+        <use href="#word" fill="url(#hatch)" filter="url(#ink-hatch)"/>
+        <use href="#word" fill="url(#cross)" mask="url(#shade)" filter="url(#ink-hatch)"/>
+        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linejoin="round" filter="url(#ink-line)"/>
+        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="2" stroke-linejoin="round" filter="url(#ink-line-2)" transform="translate(1.2 0.8)"/>
+        <g fill="#0a0a0a" filter="url(#ink-line)">
+          <circle cx="58" cy="206" r="3.2"/>
+          <circle cx="71" cy="212" r="1.6"/>
+          <circle cx="232" cy="203" r="2.2"/>
+          <ellipse cx="452" cy="208" rx="2.6" ry="1.8"/>
+        </g>
       </g>
 
       <!-- Machine side: crisp solid fill with type-design guides -->
       <g clip-path="url(#machine-side)">
         <g stroke="#0a0a0a" stroke-width="0.6" opacity="0.45">
-          <line x1="300" y1="178.5" x2="1000" y2="178.5"/>
-          <line x1="300" y1="50.5" x2="1000" y2="50.5"/>
-          <line x1="300" y1="82.5" x2="1000" y2="82.5"/>
+          <line x1="0" y1="178.5" x2="1000" y2="178.5"/>
+          <line x1="0" y1="50.5" x2="1000" y2="50.5"/>
+          <line x1="0" y1="82.5" x2="1000" y2="82.5"/>
         </g>
         <g class="guide-label" fill="#0a0a0a" opacity="0.6" text-anchor="end">
           <text x="996" y="46">cap</text>
@@ -164,10 +194,13 @@
         <use href="#word" fill="#0a0a0a"/>
       </g>
 
-      <!-- The seam -->
-      <line id="seam" x1="430" y1="0" x2="310" y2="240" stroke="#0a0a0a" stroke-width="1" stroke-dasharray="3 5" opacity="0.5"/>
-    </svg>
-  </h1>
+      <!-- The seam and its grip -->
+      <line id="seam" x1="430" y1="0" x2="310" y2="240" stroke="#0a0a0a" stroke-width="1" stroke-dasharray="3 5" opacity="0.55"/>
+      <g id="grip" class="grip" tabindex="0" role="slider" aria-label="How much of the logo is hand-drawn" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35" aria-orientation="horizontal" transform="translate(303 255)">
+        <circle r="13" fill="#fff" stroke="#0a0a0a" stroke-width="1.5"/>
+        <path d="M-3 -4.5 L-7.5 0 L-3 4.5 M3 -4.5 L7.5 0 L3 4.5" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+  </svg>
 </header>
 
 <main>
@@ -188,9 +221,85 @@
 </footer>
 
 <script>
-  // Gentle "line boil" on the hand-drawn half, like a redrawn animation frame.
   (function () {
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // --- Draggable seam -------------------------------------------------
+    // The seam is a line through (c + LEAN, 0) and (c - LEAN, 240).
+    var svg = document.getElementById("logo");
+    var hand = document.getElementById("hand-poly");
+    var machine = document.getElementById("machine-poly");
+    var seam = document.getElementById("seam");
+    var grip = document.getElementById("grip");
+    var LEAN = 60, MIN = -80, MAX = 1080, GRIP_Y = 255;
+    var c = 370;
+
+    function set(next) {
+      c = Math.max(MIN, Math.min(MAX, next));
+      var top = c + LEAN, bot = c - LEAN;
+      hand.setAttribute("points", "-200,0 " + top + ",0 " + bot + ",240 -200,240");
+      machine.setAttribute("points", top + ",0 1200,0 1200,240 " + bot + ",240");
+      seam.setAttribute("x1", top); seam.setAttribute("x2", bot);
+      var gx = c + LEAN - GRIP_Y * (2 * LEAN / 240);
+      grip.setAttribute("transform", "translate(" + gx + " " + GRIP_Y + ")");
+      // 40..960 is where the word sits
+      var pct = Math.round(Math.max(0, Math.min(1, (c - 40) / 920)) * 100);
+      grip.setAttribute("aria-valuenow", pct);
+      grip.setAttribute("aria-valuetext", pct + "% hand-drawn");
+    }
+
+    function toSvg(e) {
+      var p = svg.createSVGPoint();
+      p.x = e.clientX; p.y = e.clientY;
+      return p.matrixTransform(svg.getScreenCTM().inverse());
+    }
+    function fromPointer(e) {
+      var p = toSvg(e);
+      // Put the seam through the pointer.
+      set(p.x + (p.y - 120) * (2 * LEAN / 240));
+    }
+
+    var dragging = false;
+    svg.addEventListener("pointerdown", function (e) {
+      dragging = true;
+      cancelIntro();
+      svg.setPointerCapture(e.pointerId);
+      svg.classList.add("dragging");
+      fromPointer(e);
+      e.preventDefault();
+    });
+    svg.addEventListener("pointermove", function (e) { if (dragging) fromPointer(e); });
+    function stop() { dragging = false; svg.classList.remove("dragging"); }
+    svg.addEventListener("pointerup", stop);
+    svg.addEventListener("pointercancel", stop);
+
+    grip.addEventListener("keydown", function (e) {
+      var step = { ArrowLeft: -20, ArrowDown: -20, ArrowRight: 20, ArrowUp: 20, PageDown: -100, PageUp: 100 }[e.key];
+      if (step) set(c + step);
+      else if (e.key === "Home") set(MIN);
+      else if (e.key === "End") set(MAX);
+      else return;
+      cancelIntro();
+      e.preventDefault();
+    });
+
+    // A small sweep on load so it's clear the seam moves.
+    var introId = 0;
+    function cancelIntro() { if (introId) cancelAnimationFrame(introId); introId = 0; }
+    set(c);
+    if (!reduce) {
+      var t0 = null, from = 560, to = 370;
+      set(from);
+      introId = requestAnimationFrame(function step(t) {
+        if (t0 === null) t0 = t;
+        var k = Math.min(1, (t - t0) / 1200);
+        var ease = 1 - Math.pow(1 - k, 3);
+        set(from + (to - from) * ease);
+        introId = k < 1 ? requestAnimationFrame(step) : 0;
+      });
+    }
+
+    // --- Gentle "line boil" on the ink, like redrawn animation frames ---
     if (reduce) return;
     var nodes = document.querySelectorAll(".boil");
     var base = [1, 7, 3];
@@ -198,7 +307,7 @@
     setInterval(function () {
       frame = (frame + 1) % 3;
       for (var i = 0; i < nodes.length; i++) nodes[i].setAttribute("seed", base[i] + frame * 11);
-    }, 220);
+    }, 240);
   })();
 </script>
 </body>
