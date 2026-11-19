@@ -4,7 +4,7 @@ The Braickish homepage, served at https://braickish.github.io/ (GitHub Pages fro
 
 - One static page: `index.html` (inline CSS/JS, Google Fonts only) plus `favicon.svg`. No build step.
 - Black-and-white styling. The page leads with a dictionary-style definition of "brackish" and has two senses: the dictionary meaning, then
-  "(also br·ai·ck·ish)", a slightly unpalatable mix of human and AI work, ending on its own line with
+  "(also br·ai·ck·ish)", a disquieting mix of human and AI work, ending on its own line with
   "Where the most interesting things tend to grow." Use the user's wording exactly. It ends with `hello@braickish.com`.
 - The logo is an inline SVG: one `<text>` word drawn twice and clipped along a diagonal seam.
   - Left half is a charcoal/watercolour wash, matched to the bottom-left "P" in
