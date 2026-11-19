@@ -119,37 +119,17 @@
   <h1 class="sr-only">Braickish</h1>
   <svg class="logo" id="logo" viewBox="0 0 1000 272" role="group" aria-label="Braickish logo: drag the seam to change how much is hand-drawn">
       <defs>
-        <!-- Static ink: soften the pen lines slightly, then re-harden the
-             alpha so crossings pool a little, like a felt-tip pen. -->
-        <filter id="ink" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB">
-          <feGaussianBlur stdDeviation="0.5"/>
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="3.2" intercept="-0.5"/>
-          </feComponentTransfer>
+        <!-- Charcoal texture over the swipes: slightly frayed edges, a soft
+             falloff, and paper tooth breaking up the tone. Seeded noise in
+             user space, so nothing moves. -->
+        <filter id="charcoal" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x="0" y="0" width="1000" height="272" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.09 0.05" numOctaves="2" seed="5" result="fray"/>
+          <feDisplacementMap in="SourceGraphic" in2="fray" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="frayed"/>
+          <feGaussianBlur in="frayed" stdDeviation="0.85" result="soft"/>
+          <feTurbulence type="fractalNoise" baseFrequency="0.035 0.32" numOctaves="3" seed="8" result="toothNoise"/>
+          <feColorMatrix in="toothNoise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.7 0 0 0 0.2" result="tooth"/>
+          <feComposite in="soft" in2="tooth" operator="arithmetic" k1="1"/>
         </filter>
-
-        <!-- Pen outline: a fixed, gentle wobble so the contour reads as drawn
-             by hand. Static seed, no animation. -->
-        <filter id="pen-line" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
-          <feGaussianBlur in="d" stdDeviation="0.6"/>
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="5" intercept="-1.6"/>
-          </feComponentTransfer>
-        </filter>
-        <filter id="pen-line-2" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="9" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="G" yChannelSelector="R" result="d"/>
-          <feGaussianBlur in="d" stdDeviation="0.5"/>
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="5" intercept="-1.8"/>
-          </feComponentTransfer>
-        </filter>
-        <!-- Keep the scribble inside the (hand-wobbled) letters -->
-        <mask id="letters" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="272">
-          <use href="#word" fill="#fff" stroke="#fff" stroke-width="1.5" filter="url(#pen-line)"/>
-        </mask>
 
         <!-- Seam positions are set by the script; these are the defaults -->
         <clipPath id="hand-side">
@@ -162,18 +142,9 @@
         <text id="word" x="40" y="178" font-family="'Inter Tight', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="176" textLength="920" lengthAdjust="spacingAndGlyphs">Braickish</text>
       </defs>
 
-      <!-- Hand side: a pen scribble (drawn by the script) kept inside the
-           letters, plus a loose two-pass pen outline for definition -->
+      <!-- Hand side: charcoal -->
       <g clip-path="url(#hand-side)">
-        <g mask="url(#letters)">
-          <g fill="none" stroke="#0a0a0a" stroke-linecap="round" stroke-linejoin="round" filter="url(#ink)">
-            <path id="scrib-a" stroke-width="1.3"/>
-            <path id="scrib-b" stroke-width="1.8"/>
-            <path id="scrib-c" stroke-width="2.4"/>
-          </g>
-        </g>
-        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linejoin="round" filter="url(#pen-line)"/>
-        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linejoin="round" filter="url(#pen-line-2)" transform="translate(1.4 -1)"/>
+        <g id="charcoal-strokes" fill="#161616" filter="url(#charcoal)"></g>
       </g>
 
       <!-- Machine side: crisp solid fill with type-design guides -->
@@ -286,7 +257,7 @@
     function cancelIntro() { if (introId) cancelAnimationFrame(introId); introId = 0; }
     set(c);
     ready(function () {
-      buildScribble();
+      buildCharcoal();
       if (reduce || dragging) return;
       var t0 = null, from = 560, to = 370;
       set(from);
@@ -299,17 +270,16 @@
       });
     });
 
-    // --- Scribbled pen half -------------------------------------------
-    // A pen wanders in loops inside each letter and turns back at the edges,
-    // so the letterform comes only from the scribble (no outline). Seeded, so
-    // it draws the same every time.
-    function buildScribble() {
-      var W = 1000, H = 272, R = 2; // mask resolution: 2px per unit
+    // --- Charcoal half --------------------------------------------------
+    // Built like the real thing: overlapping horizontal swipes of charcoal,
+    // each with its own pressure, tilt and ragged ends, laid row by row across
+    // the letters. Seeded, so it draws the same every time.
+    function buildCharcoal() {
+      var W = 1000, H = 272, R = 2;
       var cv = document.createElement("canvas");
       cv.width = W * R; cv.height = H * R;
       var ctx = cv.getContext("2d");
-      var font = "800 176px 'Inter Tight', 'Helvetica Neue', Arial, sans-serif";
-      ctx.font = font;
+      ctx.font = "800 176px 'Inter Tight', 'Helvetica Neue', Arial, sans-serif";
       var sx = 920 / ctx.measureText("Braickish").width; // match textLength
       ctx.setTransform(R * sx, 0, 0, R, R * 40, R * 178);
       ctx.fillText("Braickish", 0, 0);
@@ -319,93 +289,57 @@
         if (ix < 0 || iy < 0 || ix >= cv.width || iy >= cv.height) return false;
         return px[(iy * cv.width + ix) * 4 + 3] > 128;
       }
-
-      var seed = 20261119;
+      var seed = 1119;
       function rand() { // mulberry32
         seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
         var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       }
+      function f(n) { return n.toFixed(1); }
 
-      // Coverage grid, so pen lifts restart where the ink is thinnest.
-      var G = 7, gw = Math.ceil(W / G), gh = Math.ceil(H / G);
-      var cov = new Float32Array(gw * gh), cells = [];
-      for (var gy = 0; gy < gh; gy++) for (var gx = 0; gx < gw; gx++) {
-        if (inside(gx * G + G / 2, gy * G + G / 2)) cells.push(gy * gw + gx);
-        else cov[gy * gw + gx] = Infinity;
-      }
-      function mark(x, y) {
-        var gx = Math.floor(x / G), gy = Math.floor(y / G);
-        if (gx >= 0 && gy >= 0 && gx < gw && gy < gh) cov[gy * gw + gx] += 1;
-      }
-
-      var STEP = 2.2, LOOK = 5, strokes = [];
-      var budget = Math.round(cells.length * 14);
-      while (budget > 0) {
-        // Start in the least-inked of a few random cells.
-        var best = -1;
-        for (var k = 0; k < 24; k++) {
-          var c = cells[(rand() * cells.length) | 0];
-          if (best < 0 || cov[c] < cov[best]) best = c;
+      var NS = "http://www.w3.org/2000/svg";
+      var layer = document.getElementById("charcoal-strokes");
+      var frag = document.createDocumentFragment();
+      // Slow drift in pressure down the page, like a hand pressing harder
+      // then easing off.
+      var press = 0;
+      for (var y = 36; y < 184; y += 3.6 + rand() * 1.8) {
+        press = Math.max(-0.18, Math.min(0.18, press + (rand() - 0.5) * 0.08));
+        var half = 4.6 + rand() * 2.4;
+        // Spans where both the top and bottom of the swipe are in the letter.
+        var spans = [], start = null;
+        for (var x = 30; x <= 975; x += 0.5) {
+          var ok = inside(x, y - half * 0.55) && inside(x, y + half * 0.55);
+          if (ok && start === null) start = x;
+          if (!ok && start !== null) { spans.push([start, x]); start = null; }
         }
-        var x = (best % gw) * G + rand() * G, y = Math.floor(best / gw) * G + rand() * G;
-        if (!inside(x, y)) continue;
-        var th = rand() * Math.PI * 2, om = (rand() < 0.5 ? -1 : 1) * (0.08 + rand() * 0.14);
-        var pts = [[x, y]], n = 110 + ((rand() * 200) | 0), out = 0, target = null;
-        for (var i = 0; i < n; i++) {
-          // Loopy, restless wandering: curvature drifts, flips, and now and
-          // then resets for a straighter dash.
-          om += (rand() - 0.5) * 0.09;
-          if (rand() < 0.015) om = -om;
-          if (rand() < 0.02) om = (rand() - 0.5) * 0.5;
-          om = Math.max(-0.34, Math.min(0.34, om));
-          if (target === null && !inside(x + Math.cos(th) * LOOK, y + Math.sin(th) * LOOK)) {
-            // Near the edge: pick a way back in, roughly reversing, and
-            // hairpin toward it. Momentum leaves a little overshoot.
-            var opts = [];
-            for (var a2 = 0; a2 < 16; a2++) {
-              var t2 = th + a2 * Math.PI / 8;
-              if (inside(x + Math.cos(t2) * LOOK * 2, y + Math.sin(t2) * LOOK * 2)) opts.push(t2);
-            }
-            if (opts.length) {
-              var back = th + Math.PI + (rand() - 0.5) * 1.6, pick = opts[0], bd = 9;
-              opts.forEach(function (o) {
-                var df = Math.abs(Math.atan2(Math.sin(o - back), Math.cos(o - back)));
-                if (df < bd) { bd = df; pick = o; }
-              });
-              target = pick;
-            }
+        spans.forEach(function (sp) {
+          if (sp[1] - sp[0] < 1.5) return;
+          // Ragged, uneven ends; now and then a longer drag past the edge.
+          var x0 = sp[0] - rand() * 2.2 - (rand() < 0.06 ? 2 + rand() * 7 : 0);
+          var x1 = sp[1] + rand() * 2.2 + (rand() < 0.06 ? 2 + rand() * 7 : 0);
+          var slope = (rand() - 0.5) * 0.02;
+          var yc = y + (rand() - 0.5) * 1.2;
+          var top = [], bot = [];
+          var n = Math.max(2, Math.ceil((x1 - x0) / 7));
+          for (var i = 0; i <= n; i++) {
+            var xx = x0 + (x1 - x0) * i / n;
+            // Thinner at the ends, where the stick lifts off.
+            var edge = Math.min(1, Math.min(i, n - i) / 1.5 + 0.35);
+            var yy = yc + slope * (xx - x0);
+            top.push(f(xx + (rand() - 0.5) * 2) + " " + f(yy - half * edge + (rand() - 0.5) * 1.1));
+            bot.push(f(xx + (rand() - 0.5) * 2) + " " + f(yy + half * edge + (rand() - 0.5) * 1.1));
           }
-          if (target !== null) {
-            var diff = Math.atan2(Math.sin(target - th), Math.cos(target - th));
-            th += Math.max(-0.95, Math.min(0.95, diff));
-            if (Math.abs(diff) < 0.95) { target = null; om = -om; }
-          } else {
-            th += om;
-          }
-          x += Math.cos(th) * STEP; y += Math.sin(th) * STEP;
-          out = inside(x, y) ? 0 : out + 1;
-          if (out > 6) break; // pen slipped off: lift
-          pts.push([x, y]); mark(x, y);
-        }
-        budget -= pts.length;
-        if (pts.length > 8) strokes.push(pts);
+          var el = document.createElementNS(NS, "path");
+          el.setAttribute("d", "M" + top.join("L") + "L" + bot.reverse().join("L") + "Z");
+          var a = 0.4 + rand() * 0.32 + press;
+          if (rand() < 0.08) a *= 0.7; // a lighter pass
+          el.setAttribute("fill-opacity", Math.max(0.15, Math.min(0.92, a)).toFixed(2));
+          frag.appendChild(el);
+        });
       }
-
-      // Smooth each stroke and split them across a few pen weights.
-      var d = ["", "", ""];
-      strokes.forEach(function (p) {
-        var s = "M" + p[0][0].toFixed(1) + " " + p[0][1].toFixed(1);
-        for (var i = 1; i < p.length - 1; i++) {
-          s += "Q" + p[i][0].toFixed(1) + " " + p[i][1].toFixed(1) + " " +
-            ((p[i][0] + p[i + 1][0]) / 2).toFixed(1) + " " + ((p[i][1] + p[i + 1][1]) / 2).toFixed(1);
-        }
-        d[(rand() * 3) | 0] += s;
-      });
-      ["scrib-a", "scrib-b", "scrib-c"].forEach(function (id, i) {
-        document.getElementById(id).setAttribute("d", d[i]);
-      });
+      layer.appendChild(frag);
     }
 
     function ready(fn) {
