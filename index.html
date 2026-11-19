@@ -39,6 +39,7 @@
   header { padding-top: clamp(48px, 12vh, 120px); }
   .logo { display: block; width: 100%; height: auto; overflow: visible; cursor: ew-resize; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
   .logo.dragging { cursor: grabbing; }
+  .logo .seedling { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-weight: 400; }
   .logo .tagline { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-style: italic; }
   .grip { cursor: grab; outline: none; }
   .grip:focus-visible circle { stroke-width: 3; }
@@ -120,6 +121,16 @@
   <h1 class="sr-only">Braickish</h1>
   <svg class="logo" id="logo" viewBox="0 0 1000 272" role="group" aria-label="Braickish logo: drag the seam to change how much is hand-drawn">
       <defs>
+        <!-- Black-and-white version of the seedling emoji -->
+        <filter id="mono" color-interpolation-filters="sRGB">
+          <feColorMatrix type="saturate" values="0"/>
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="2.6" intercept="-1.05"/>
+            <feFuncG type="linear" slope="2.6" intercept="-1.05"/>
+            <feFuncB type="linear" slope="2.6" intercept="-1.05"/>
+          </feComponentTransfer>
+        </filter>
+
         <!-- Seam positions are set by the script; these are the defaults -->
         <clipPath id="hand-side">
           <polygon id="hand-poly" points="0,0 430,0 310,240 0,240"/>
@@ -152,8 +163,16 @@
 
       <!-- The seam and its grip -->
       <line id="seam" x1="430" y1="0" x2="310" y2="240" stroke="#0a0a0a" stroke-width="1" stroke-dasharray="3 5" opacity="0.55"/>
-      <!-- Tagline, tucked under the word; right edge lines up with the "h" -->
-      <text class="tagline" x="958" y="210" text-anchor="end" font-family="Newsreader, Georgia, serif" font-style="italic" font-size="30" fill="#6b6b6b" stroke="#fff" stroke-width="7" stroke-linejoin="round" paint-order="stroke">where interesting things tend to grow</text>
+      <!-- Tagline, tucked under the word; right edge lines up with the "h".
+           It lives on the computer-drawn side, so swiping toward hand-drawn
+           wipes it away and reveals a black-and-white seedling. -->
+      <g clip-path="url(#machine-side)">
+        <text class="tagline" x="958" y="210" text-anchor="end" font-family="Newsreader, Georgia, serif" font-style="italic" font-size="30" fill="#6b6b6b" stroke="#fff" stroke-width="7" stroke-linejoin="round" paint-order="stroke">where interesting things tend to grow</text>
+      </g>
+      <g clip-path="url(#hand-side)">
+        <rect x="922" y="182" width="40" height="38" fill="#fff"/>
+        <text class="seedling" x="958" y="213" text-anchor="end" font-size="34" filter="url(#mono)" aria-hidden="true">&#x1F331;</text>
+      </g>
       <g id="grip" class="grip" tabindex="0" role="slider" aria-label="How much of the logo is hand-drawn" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35" aria-orientation="horizontal" transform="translate(303 255)">
         <circle r="13" fill="#fff" stroke="#0a0a0a" stroke-width="1.5"/>
         <path d="M-3 -4.5 L-7.5 0 L-3 4.5 M3 -4.5 L7.5 0 L3 4.5" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -299,7 +318,7 @@
       // Wobble the silhouette a little while reading it.
       for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
         var ux = x / R, uy = y / R;
-        var dx = (fbm2(ux * 0.04, uy * 0.04, 5) - 0.5) * 5, dy = (fbm2(ux * 0.04, uy * 0.04, 17) - 0.5) * 3;
+        var dx = (fbm2(ux * 0.04, uy * 0.04, 5) - 0.5) * 3.5, dy = (fbm2(ux * 0.04, uy * 0.04, 17) - 0.5) * 2.2;
         var sx = Math.round(x + dx * R), sy = Math.round(y + dy * R);
         M[y * w + x] = (sx >= 0 && sy >= 0 && sx < w && sy < h) ? src[(sy * w + sx) * 4 + 3] / 255 : 0;
       }
@@ -325,7 +344,7 @@
       }
       // Inside the letter, only let the edge break up within a few units of it,
       // so narrow stems stay whole.
-      var hs = Math.round(2.5 * R), Hs = new Float32Array(w * h);
+      var hs = Math.round(1.8 * R), Hs = new Float32Array(w * h);
       for (var y = 0; y < h; y++) {
         var acc = 0, row = y * w;
         for (var x = -hs; x < w + hs; x++) {
@@ -337,7 +356,7 @@
       // Keep letters apart: on each row, a finger may reach only about a third
       // of the way across a gap (between letters, or across a counter), so
       // neighbours never touch.
-      var reachOk = new Uint8Array(w * h), maxShare = 0.22, maxReach = 3.5 * R; // units past the outline
+      var reachOk = new Uint8Array(w * h), maxShare = 0.22, maxReach = 2.4 * R; // units past the outline
       for (var y = 0; y < h; y++) {
         var row = y * w, x = 0;
         while (x < w) {
@@ -389,7 +408,7 @@
           var ly = uy + L.dy + (ux - L.cx) * L.tilt;
           // Rows of brush hairs: threshold varies quickly with y, slowly with x;
           // a slower row noise lets the odd finger run long.
-          var t = 0.5 + (fbm1(ly * 0.3 + n1(ux * 0.01, 300 + lo) * 2, 400 + lo) - 0.5) * 1.1
+          var t = 0.5 + (fbm1(ly * 0.24 + n1(ux * 0.01, 300 + lo) * 2, 400 + lo) - 0.5) * 1.1
                       + (n1(ly * 0.11, 450 + lo) - 0.5) * 0.5;
           t += (rand() - 0.5) * 0.04; // grainy finger tips
           // Each row either reaches out (a finger) or breaks in (a nibble).
