@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Braickish</title>
-<meta name="description" content="Brackish is an adjective meaning somewhat salty—especially water that mixes freshwater and seawater—or unpleasant, distasteful, or unpalatable.">
+<meta name="description" content="Braickish: where AI and human currents mix. Like an estuary, somewhat unpalatable, yet among the most productive places on earth.">
 <meta property="og:title" content="Braickish">
-<meta property="og:description" content="Somewhat salty. Half hand-drawn, half machine-made.">
+<meta property="og:description" content="Where AI and human currents mix.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -95,6 +95,8 @@
     margin: 0;
   }
   .sense .num { font-weight: 500; }
+  .sense + .sense { margin-top: 0.9em; }
+  .also { color: var(--muted); }
 
   footer {
     padding: 0 0 clamp(32px, 6vh, 56px);
@@ -117,42 +119,14 @@
   <h1 class="sr-only">Braickish</h1>
   <svg class="logo" id="logo" viewBox="0 0 1000 272" role="group" aria-label="Braickish logo: drag the seam to change how much is hand-drawn">
       <defs>
-        <!-- Pen and ink: wobble the shapes, soften, then re-harden the alpha so
-             edges pool and taper like ink from a nib. -->
-        <filter id="ink-line" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
-          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="1" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
-          <feGaussianBlur in="d" stdDeviation="0.9"/>
+        <!-- Static ink: soften the pen lines slightly, then re-harden the
+             alpha so crossings pool a little, like a felt-tip pen. -->
+        <filter id="ink" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB">
+          <feGaussianBlur stdDeviation="0.5"/>
           <feComponentTransfer>
-            <feFuncA type="linear" slope="7" intercept="-2.4"/>
+            <feFuncA type="linear" slope="3.2" intercept="-0.5"/>
           </feComponentTransfer>
         </filter>
-        <filter id="ink-line-2" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
-          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="G" yChannelSelector="R" result="d"/>
-          <feGaussianBlur in="d" stdDeviation="0.7"/>
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="7" intercept="-2.6"/>
-          </feComponentTransfer>
-        </filter>
-        <filter id="ink-hatch" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
-          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="3" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
-          <feGaussianBlur in="d" stdDeviation="0.45"/>
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="4" intercept="-0.9"/>
-          </feComponentTransfer>
-        </filter>
-        <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
-          <line x1="0" y1="0" x2="0" y2="7" stroke="#0a0a0a" stroke-width="1.9"/>
-        </pattern>
-        <pattern id="cross" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(48)">
-          <line x1="0" y1="0" x2="0" y2="8" stroke="#0a0a0a" stroke-width="1.5"/>
-        </pattern>
-        <!-- Cross-hatch only the lower part of the letters, like shading -->
-        <mask id="shade" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="272">
-          <path d="M0 128 C 60 116, 120 140, 190 124 S 300 112, 360 132 S 470 142, 540 120 S 650 114, 720 134 S 850 140, 920 118 S 980 126, 1000 124 V 210 H 0 Z" fill="#fff"/>
-        </mask>
 
         <!-- Seam positions are set by the script; these are the defaults -->
         <clipPath id="hand-side">
@@ -165,18 +139,11 @@
         <text id="word" x="40" y="178" font-family="'Inter Tight', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="176" textLength="920" lengthAdjust="spacingAndGlyphs">Braickish</text>
       </defs>
 
-      <!-- Hand side: pen and ink -->
-      <g clip-path="url(#hand-side)">
-        <use href="#word" fill="url(#hatch)" filter="url(#ink-hatch)"/>
-        <use href="#word" fill="url(#cross)" mask="url(#shade)" filter="url(#ink-hatch)"/>
-        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linejoin="round" filter="url(#ink-line)"/>
-        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="2" stroke-linejoin="round" filter="url(#ink-line-2)" transform="translate(1.2 0.8)"/>
-        <g fill="#0a0a0a" filter="url(#ink-line)">
-          <circle cx="58" cy="206" r="3.2"/>
-          <circle cx="71" cy="212" r="1.6"/>
-          <circle cx="232" cy="203" r="2.2"/>
-          <ellipse cx="452" cy="208" rx="2.6" ry="1.8"/>
-        </g>
+      <!-- Hand side: a pen scribble filling the letters (drawn by the script) -->
+      <g clip-path="url(#hand-side)" fill="none" stroke="#0a0a0a" stroke-linecap="round" stroke-linejoin="round" filter="url(#ink)">
+        <path id="scrib-a" stroke-width="1.3"/>
+        <path id="scrib-b" stroke-width="1.8"/>
+        <path id="scrib-c" stroke-width="2.4"/>
       </g>
 
       <!-- Machine side: crisp solid fill with type-design guides -->
@@ -211,7 +178,8 @@
     </dt>
     <dd style="margin:0">
       <p class="pos">adjective</p>
-      <p class="sense"><span class="num">1.</span><span>Brackish is an adjective meaning somewhat salty—especially water that mixes freshwater and seawater—or unpleasant, distasteful, or unpalatable.</span></p>
+      <p class="sense"><span class="num">1.</span><span>Somewhat salty, especially water that mixes freshwater and seawater; also, unpleasant, distasteful, or unpalatable.</span></p>
+      <p class="sense"><span class="num">2.</span><span><span class="also">(also <i>br·ai·ck·ish</i>)</span> Where AI and human currents mix. Like an estuary, somewhat unpalatable, yet among the most productive places on earth and where the most interesting things tend to grow.</span></p>
     </dd>
   </dl>
 </main>
@@ -287,7 +255,9 @@
     var introId = 0;
     function cancelIntro() { if (introId) cancelAnimationFrame(introId); introId = 0; }
     set(c);
-    if (!reduce) {
+    ready(function () {
+      buildScribble();
+      if (reduce || dragging) return;
       var t0 = null, from = 560, to = 370;
       set(from);
       introId = requestAnimationFrame(function step(t) {
@@ -297,17 +267,122 @@
         set(from + (to - from) * ease);
         introId = k < 1 ? requestAnimationFrame(step) : 0;
       });
+    });
+
+    // --- Scribbled pen half -------------------------------------------
+    // A pen wanders in loops inside each letter and turns back at the edges,
+    // so the letterform comes only from the scribble (no outline). Seeded, so
+    // it draws the same every time.
+    function buildScribble() {
+      var W = 1000, H = 272, R = 2; // mask resolution: 2px per unit
+      var cv = document.createElement("canvas");
+      cv.width = W * R; cv.height = H * R;
+      var ctx = cv.getContext("2d");
+      var font = "800 176px 'Inter Tight', 'Helvetica Neue', Arial, sans-serif";
+      ctx.font = font;
+      var sx = 920 / ctx.measureText("Braickish").width; // match textLength
+      ctx.setTransform(R * sx, 0, 0, R, R * 40, R * 178);
+      ctx.fillText("Braickish", 0, 0);
+      var px = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      function inside(x, y) {
+        var ix = Math.round(x * R), iy = Math.round(y * R);
+        if (ix < 0 || iy < 0 || ix >= cv.width || iy >= cv.height) return false;
+        return px[(iy * cv.width + ix) * 4 + 3] > 128;
+      }
+
+      var seed = 20261119;
+      function rand() { // mulberry32
+        seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+        var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+
+      // Coverage grid, so pen lifts restart where the ink is thinnest.
+      var G = 7, gw = Math.ceil(W / G), gh = Math.ceil(H / G);
+      var cov = new Float32Array(gw * gh), cells = [];
+      for (var gy = 0; gy < gh; gy++) for (var gx = 0; gx < gw; gx++) {
+        if (inside(gx * G + G / 2, gy * G + G / 2)) cells.push(gy * gw + gx);
+        else cov[gy * gw + gx] = Infinity;
+      }
+      function mark(x, y) {
+        var gx = Math.floor(x / G), gy = Math.floor(y / G);
+        if (gx >= 0 && gy >= 0 && gx < gw && gy < gh) cov[gy * gw + gx] += 1;
+      }
+
+      var STEP = 2.2, LOOK = 5, strokes = [];
+      var budget = Math.round(cells.length * 14);
+      while (budget > 0) {
+        // Start in the least-inked of a few random cells.
+        var best = -1;
+        for (var k = 0; k < 24; k++) {
+          var c = cells[(rand() * cells.length) | 0];
+          if (best < 0 || cov[c] < cov[best]) best = c;
+        }
+        var x = (best % gw) * G + rand() * G, y = Math.floor(best / gw) * G + rand() * G;
+        if (!inside(x, y)) continue;
+        var th = rand() * Math.PI * 2, om = (rand() < 0.5 ? -1 : 1) * (0.08 + rand() * 0.14);
+        var pts = [[x, y]], n = 110 + ((rand() * 200) | 0), out = 0, target = null;
+        for (var i = 0; i < n; i++) {
+          // Loopy, restless wandering: curvature drifts, flips, and now and
+          // then resets for a straighter dash.
+          om += (rand() - 0.5) * 0.09;
+          if (rand() < 0.015) om = -om;
+          if (rand() < 0.02) om = (rand() - 0.5) * 0.5;
+          om = Math.max(-0.34, Math.min(0.34, om));
+          if (target === null && !inside(x + Math.cos(th) * LOOK, y + Math.sin(th) * LOOK)) {
+            // Near the edge: pick a way back in, roughly reversing, and
+            // hairpin toward it. Momentum leaves a little overshoot.
+            var opts = [];
+            for (var a2 = 0; a2 < 16; a2++) {
+              var t2 = th + a2 * Math.PI / 8;
+              if (inside(x + Math.cos(t2) * LOOK * 2, y + Math.sin(t2) * LOOK * 2)) opts.push(t2);
+            }
+            if (opts.length) {
+              var back = th + Math.PI + (rand() - 0.5) * 1.6, pick = opts[0], bd = 9;
+              opts.forEach(function (o) {
+                var df = Math.abs(Math.atan2(Math.sin(o - back), Math.cos(o - back)));
+                if (df < bd) { bd = df; pick = o; }
+              });
+              target = pick;
+            }
+          }
+          if (target !== null) {
+            var diff = Math.atan2(Math.sin(target - th), Math.cos(target - th));
+            th += Math.max(-0.95, Math.min(0.95, diff));
+            if (Math.abs(diff) < 0.95) { target = null; om = -om; }
+          } else {
+            th += om;
+          }
+          x += Math.cos(th) * STEP; y += Math.sin(th) * STEP;
+          out = inside(x, y) ? 0 : out + 1;
+          if (out > 6) break; // pen slipped off: lift
+          pts.push([x, y]); mark(x, y);
+        }
+        budget -= pts.length;
+        if (pts.length > 8) strokes.push(pts);
+      }
+
+      // Smooth each stroke and split them across a few pen weights.
+      var d = ["", "", ""];
+      strokes.forEach(function (p) {
+        var s = "M" + p[0][0].toFixed(1) + " " + p[0][1].toFixed(1);
+        for (var i = 1; i < p.length - 1; i++) {
+          s += "Q" + p[i][0].toFixed(1) + " " + p[i][1].toFixed(1) + " " +
+            ((p[i][0] + p[i + 1][0]) / 2).toFixed(1) + " " + ((p[i][1] + p[i + 1][1]) / 2).toFixed(1);
+        }
+        d[(rand() * 3) | 0] += s;
+      });
+      ["scrib-a", "scrib-b", "scrib-c"].forEach(function (id, i) {
+        document.getElementById(id).setAttribute("d", d[i]);
+      });
     }
 
-    // --- Gentle "line boil" on the ink, like redrawn animation frames ---
-    if (reduce) return;
-    var nodes = document.querySelectorAll(".boil");
-    var base = [1, 7, 3];
-    var frame = 0;
-    setInterval(function () {
-      frame = (frame + 1) % 3;
-      for (var i = 0; i < nodes.length; i++) nodes[i].setAttribute("seed", base[i] + frame * 11);
-    }, 240);
+    function ready(fn) {
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load("800 176px 'Inter Tight'").then(fn, fn);
+      } else fn();
+    }
   })();
 </script>
 </body>
