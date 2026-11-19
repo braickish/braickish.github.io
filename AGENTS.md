@@ -11,7 +11,10 @@ The Braickish homepage, served at https://braickish.github.io/ (GitHub Pages fro
     canvas mask, then a simulated pen wanders in loops inside it and hairpins back at the edges. Short strokes restart
     in the least-inked cells. It is seeded, so the result is static and identical on every load (no animation; the user
     found the line boil gimmicky). Pen weights are split across `#scrib-a/b/c`, with a light static `#ink` filter.
-    To tune the look, edit `budget` (density), `n` (stroke length), the `om` curvature limits (loop size) and `LOOK`.
+    The scribble is masked to the letters (`#letters`, wobbled by `#pen-line`) and topped with a loose two-pass pen
+    outline (`#pen-line`, `#pen-line-2`), so the letterforms stay clear; the user found the outline-free scribble too
+    hard to read. If this still doesn't work, the fallback they named is the charcoal "P" (bottom left of the
+    reference). To tune the look, edit `budget` (density), `n` (stroke length), the `om` curvature limits (loop size) and `LOOK`.
   - Right half is crisp solid black with type-design guide lines.
   - The seam is draggable: drag anywhere on the logo, or focus the round grip (`role="slider"`) and use the arrow
     keys, Page Up/Down, Home or End. The script sets both clip polygons, `#seam` and the grip from one value, `c`.

@@ -128,6 +128,29 @@
           </feComponentTransfer>
         </filter>
 
+        <!-- Pen outline: a fixed, gentle wobble so the contour reads as drawn
+             by hand. Static seed, no animation. -->
+        <filter id="pen-line" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+          <feGaussianBlur in="d" stdDeviation="0.6"/>
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="5" intercept="-1.6"/>
+          </feComponentTransfer>
+        </filter>
+        <filter id="pen-line-2" x="-2%" y="-5%" width="104%" height="110%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="9" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="G" yChannelSelector="R" result="d"/>
+          <feGaussianBlur in="d" stdDeviation="0.5"/>
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="5" intercept="-1.8"/>
+          </feComponentTransfer>
+        </filter>
+        <!-- Keep the scribble inside the (hand-wobbled) letters -->
+        <mask id="letters" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="272">
+          <use href="#word" fill="#fff" stroke="#fff" stroke-width="1.5" filter="url(#pen-line)"/>
+        </mask>
+
         <!-- Seam positions are set by the script; these are the defaults -->
         <clipPath id="hand-side">
           <polygon id="hand-poly" points="0,0 430,0 310,240 0,240"/>
@@ -139,11 +162,18 @@
         <text id="word" x="40" y="178" font-family="'Inter Tight', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="176" textLength="920" lengthAdjust="spacingAndGlyphs">Braickish</text>
       </defs>
 
-      <!-- Hand side: a pen scribble filling the letters (drawn by the script) -->
-      <g clip-path="url(#hand-side)" fill="none" stroke="#0a0a0a" stroke-linecap="round" stroke-linejoin="round" filter="url(#ink)">
-        <path id="scrib-a" stroke-width="1.3"/>
-        <path id="scrib-b" stroke-width="1.8"/>
-        <path id="scrib-c" stroke-width="2.4"/>
+      <!-- Hand side: a pen scribble (drawn by the script) kept inside the
+           letters, plus a loose two-pass pen outline for definition -->
+      <g clip-path="url(#hand-side)">
+        <g mask="url(#letters)">
+          <g fill="none" stroke="#0a0a0a" stroke-linecap="round" stroke-linejoin="round" filter="url(#ink)">
+            <path id="scrib-a" stroke-width="1.3"/>
+            <path id="scrib-b" stroke-width="1.8"/>
+            <path id="scrib-c" stroke-width="2.4"/>
+          </g>
+        </g>
+        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linejoin="round" filter="url(#pen-line)"/>
+        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linejoin="round" filter="url(#pen-line-2)" transform="translate(1.4 -1)"/>
       </g>
 
       <!-- Machine side: crisp solid fill with type-design guides -->
@@ -179,7 +209,7 @@
     <dd style="margin:0">
       <p class="pos">adjective</p>
       <p class="sense"><span class="num">1.</span><span>Somewhat salty, especially water that mixes freshwater and seawater; also, unpleasant, distasteful, or unpalatable.</span></p>
-      <p class="sense"><span class="num">2.</span><span><span class="also">(also <i>br·ai·ck·ish</i>)</span> Where AI and human currents mix. Like an estuary, somewhat unpalatable, yet among the most productive places on earth and where the most interesting things tend to grow.</span></p>
+      <p class="sense"><span class="num">2.</span><span><span class="also">(also <i>br·ai·ck·ish</i>)</span> Where AI and human currents mix. Like an estuary, somewhat unpalatable, yet among the most productive places on earth. Where the most interesting things tend to grow.</span></p>
     </dd>
   </dl>
 </main>
