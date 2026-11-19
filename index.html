@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Braickish</title>
+<meta name="description" content="Brackish is an adjective meaning somewhat salty—especially water that mixes freshwater and seawater—or unpleasant, distasteful, or unpalatable.">
+<meta property="og:title" content="Braickish">
+<meta property="og:description" content="Somewhat salty. Half hand-drawn, half machine-made.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --paper: #ffffff;
+    --muted: #6b6b6b;
+    --rule: #e4e4e4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  header, main, footer {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  header { padding-top: clamp(48px, 12vh, 120px); }
+  .logo { display: block; width: 100%; height: auto; overflow: visible; }
+  .logo text {
+    font-family: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 800;
+  }
+  .logo .guide-label {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: clamp(56px, 12vh, 120px) 0;
+  }
+  .definition { margin: 0; }
+  .headword {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25em 0.75em;
+    margin: 0 0 0.35em;
+  }
+  .headword dfn {
+    font-style: normal;
+    font-weight: 500;
+    font-size: clamp(2rem, 6vw, 2.75rem);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .pron {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .pos {
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--muted);
+    margin: 0 0 1.1em;
+    padding-bottom: 1.1em;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sense {
+    display: grid;
+    grid-template-columns: 1.6em 1fr;
+    font-size: clamp(1.2rem, 2.6vw, 1.45rem);
+    line-height: 1.5;
+    margin: 0;
+  }
+  .sense .num { font-weight: 500; }
+
+  footer {
+    padding: 0 0 clamp(32px, 6vh, 56px);
+    text-align: center;
+  }
+  footer a {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 2px;
+  }
+  footer a:hover, footer a:focus-visible { border-bottom-width: 2px; outline: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 style="margin:0">
+    <svg class="logo" viewBox="0 0 1000 240" role="img" aria-label="Braickish">
+      <defs>
+        <!-- Hand-drawn half: wobble the edges with turbulence -->
+        <filter id="rough-a" x="-5%" y="-10%" width="110%" height="120%">
+          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="1"/>
+          <feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="rough-b" x="-5%" y="-10%" width="110%" height="120%">
+          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/>
+          <feDisplacementMap in="SourceGraphic" scale="4" xChannelSelector="G" yChannelSelector="R"/>
+        </filter>
+        <filter id="rough-hatch" x="-5%" y="-10%" width="110%" height="120%">
+          <feTurbulence class="boil" type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="3"/>
+          <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)">
+          <line x1="0" y1="0" x2="0" y2="9" stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round"/>
+        </pattern>
+
+        <!-- The diagonal split runs through the "ai" in the middle -->
+        <clipPath id="hand-side">
+          <polygon id="hand-poly" points="0,0 430,0 310,240 0,240"/>
+        </clipPath>
+        <clipPath id="machine-side">
+          <polygon id="machine-poly" points="430,0 1000,0 1000,240 310,240"/>
+        </clipPath>
+
+        <text id="word" x="40" y="178" font-family="'Inter Tight', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="176" textLength="920" lengthAdjust="spacingAndGlyphs">Braickish</text>
+      </defs>
+
+      <!-- Hand side: pencil guide, hatched fill, double sketchy outline -->
+      <g clip-path="url(#hand-side)">
+        <path d="M-10 179 C 120 182, 240 176, 430 180" fill="none" stroke="#0a0a0a" stroke-width="1.2" opacity="0.35" filter="url(#rough-b)"/>
+        <use href="#word" fill="url(#hatch)" filter="url(#rough-hatch)"/>
+        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="3.2" stroke-linejoin="round" filter="url(#rough-a)"/>
+        <use href="#word" fill="none" stroke="#0a0a0a" stroke-width="1.6" stroke-linejoin="round" filter="url(#rough-b)" transform="translate(2 -1.5)"/>
+      </g>
+
+      <!-- Machine side: crisp solid fill with type-design guides -->
+      <g clip-path="url(#machine-side)">
+        <g stroke="#0a0a0a" stroke-width="0.6" opacity="0.45">
+          <line x1="300" y1="178.5" x2="1000" y2="178.5"/>
+          <line x1="300" y1="50.5" x2="1000" y2="50.5"/>
+          <line x1="300" y1="82.5" x2="1000" y2="82.5"/>
+        </g>
+        <g class="guide-label" fill="#0a0a0a" opacity="0.6" text-anchor="end">
+          <text x="996" y="46">cap</text>
+          <text x="996" y="78">x-height</text>
+          <text x="996" y="194">baseline</text>
+        </g>
+        <use href="#word" fill="#0a0a0a"/>
+      </g>
+
+      <!-- The seam -->
+      <line id="seam" x1="430" y1="0" x2="310" y2="240" stroke="#0a0a0a" stroke-width="1" stroke-dasharray="3 5" opacity="0.5"/>
+    </svg>
+  </h1>
+</header>
+
+<main>
+  <dl class="definition">
+    <dt class="headword">
+      <dfn>brack·ish</dfn>
+      <span class="pron">/ˈbrak-ish/</span>
+    </dt>
+    <dd style="margin:0">
+      <p class="pos">adjective</p>
+      <p class="sense"><span class="num">1.</span><span>Brackish is an adjective meaning somewhat salty—especially water that mixes freshwater and seawater—or unpleasant, distasteful, or unpalatable.</span></p>
+    </dd>
+  </dl>
+</main>
+
+<footer>
+  <a href="mailto:hello@braickish.com">hello@braickish.com</a>
+</footer>
+
+<script>
+  // Gentle "line boil" on the hand-drawn half, like a redrawn animation frame.
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    var nodes = document.querySelectorAll(".boil");
+    var base = [1, 7, 3];
+    var frame = 0;
+    setInterval(function () {
+      frame = (frame + 1) % 3;
+      for (var i = 0; i < nodes.length; i++) nodes[i].setAttribute("seed", base[i] + frame * 11);
+    }, 220);
+  })();
+</script>
+</body>
+</html>

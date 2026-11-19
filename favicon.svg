@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="l"><polygon points="0,0 40,0 24,64 0,64"/></clipPath>
+    <clipPath id="r"><polygon points="40,0 64,0 64,64 24,64"/></clipPath>
+    <pattern id="h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="5" stroke="#000" stroke-width="1.6"/></pattern>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#fff"/>
+  <g font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="54" text-anchor="middle">
+    <g clip-path="url(#l)"><text x="32" y="52" fill="url(#h)" stroke="#000" stroke-width="2">B</text></g>
+    <g clip-path="url(#r)"><text x="32" y="52" fill="#000">B</text></g>
+  </g>
+</svg>
