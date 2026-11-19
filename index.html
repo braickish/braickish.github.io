@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Braickish</title>
-<meta name="description" content="Braickish: where AI and human currents mix. Like an estuary, somewhat unpalatable, yet among the most productive places on earth.">
+<meta name="description" content="Braickish: a slightly unpalatable mix of human and AI work. Yet, like an estuary, among the most productive ecosystems on earth.">
 <meta property="og:title" content="Braickish">
-<meta property="og:description" content="Where AI and human currents mix.">
+<meta property="og:description" content="Where the most interesting things tend to grow.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,6 +97,7 @@
   .sense .num { font-weight: 500; }
   .sense + .sense { margin-top: 0.9em; }
   .also { color: var(--muted); }
+  .coda { display: block; margin-top: 0.75em; }
 
   footer {
     padding: 0 0 clamp(32px, 6vh, 56px);
@@ -119,18 +120,6 @@
   <h1 class="sr-only">Braickish</h1>
   <svg class="logo" id="logo" viewBox="0 0 1000 272" role="group" aria-label="Braickish logo: drag the seam to change how much is hand-drawn">
       <defs>
-        <!-- Charcoal texture over the swipes: slightly frayed edges, a soft
-             falloff, and paper tooth breaking up the tone. Seeded noise in
-             user space, so nothing moves. -->
-        <filter id="charcoal" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x="0" y="0" width="1000" height="272" color-interpolation-filters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.09 0.05" numOctaves="2" seed="5" result="fray"/>
-          <feDisplacementMap in="SourceGraphic" in2="fray" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="frayed"/>
-          <feGaussianBlur in="frayed" stdDeviation="0.85" result="soft"/>
-          <feTurbulence type="fractalNoise" baseFrequency="0.035 0.32" numOctaves="3" seed="8" result="toothNoise"/>
-          <feColorMatrix in="toothNoise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.7 0 0 0 0.2" result="tooth"/>
-          <feComposite in="soft" in2="tooth" operator="arithmetic" k1="1"/>
-        </filter>
-
         <!-- Seam positions are set by the script; these are the defaults -->
         <clipPath id="hand-side">
           <polygon id="hand-poly" points="0,0 430,0 310,240 0,240"/>
@@ -142,9 +131,9 @@
         <text id="word" x="40" y="178" font-family="'Inter Tight', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="176" textLength="920" lengthAdjust="spacingAndGlyphs">Braickish</text>
       </defs>
 
-      <!-- Hand side: charcoal -->
+      <!-- Hand side: charcoal wash, painted by the script -->
       <g clip-path="url(#hand-side)">
-        <g id="charcoal-strokes" fill="#161616" filter="url(#charcoal)"></g>
+        <image id="charcoal" x="0" y="0" width="1000" height="272" preserveAspectRatio="none"/>
       </g>
 
       <!-- Machine side: crisp solid fill with type-design guides -->
@@ -180,7 +169,7 @@
     <dd style="margin:0">
       <p class="pos">adjective</p>
       <p class="sense"><span class="num">1.</span><span>Somewhat salty, especially water that mixes freshwater and seawater; also, unpleasant, distasteful, or unpalatable.</span></p>
-      <p class="sense"><span class="num">2.</span><span><span class="also">(also <i>br·ai·ck·ish</i>)</span> Where AI and human currents mix. Like an estuary, somewhat unpalatable, yet among the most productive places on earth. Where the most interesting things tend to grow.</span></p>
+      <p class="sense"><span class="num">2.</span><span><span class="also">(also <i>br·ai·ck·ish</i>)</span> A slightly unpalatable mix of human and AI work. Yet, like an estuary, among the most productive ecosystems on earth.<span class="coda">Where the most interesting things tend to grow.</span></span></p>
     </dd>
   </dl>
 </main>
@@ -271,75 +260,136 @@
     });
 
     // --- Charcoal half --------------------------------------------------
-    // Built like the real thing: overlapping horizontal swipes of charcoal,
-    // each with its own pressure, tilt and ragged ends, laid row by row across
-    // the letters. Seeded, so it draws the same every time.
-    function buildCharcoal() {
-      var W = 1000, H = 272, R = 2;
-      var cv = document.createElement("canvas");
-      cv.width = W * R; cv.height = H * R;
-      var ctx = cv.getContext("2d");
-      ctx.font = "800 176px 'Inter Tight', 'Helvetica Neue', Arial, sans-serif";
-      var sx = 920 / ctx.measureText("Braickish").width; // match textLength
-      ctx.setTransform(R * sx, 0, 0, R, R * 40, R * 178);
-      ctx.fillText("Braickish", 0, 0);
-      var px = ctx.getImageData(0, 0, cv.width, cv.height).data;
-      function inside(x, y) {
-        var ix = Math.round(x * R), iy = Math.round(y * R);
-        if (ix < 0 || iy < 0 || ix >= cv.width || iy >= cv.height) return false;
-        return px[(iy * cv.width + ix) * 4 + 3] > 128;
-      }
-      var seed = 1119;
-      function rand() { // mulberry32
+    // Painted pixel by pixel to match a hand-made charcoal/wash letter
+    // (bottom-left "P" in the reference sheet): feathered horizontal fingers
+    // at the edges, soft wash patches, brush-row streaks, wet-edge pooling and
+    // paper grain. Seeded, so it is identical on every load and never moves.
+    // Paint charcoal/wash letters into a canvas. W,H in units; R pixels per unit.
+    // drawMask(ctx) fills the letter shapes in unit coordinates.
+    function paintCharcoal(W, H, R, drawMask, seedIn) {
+      var w = Math.round(W * R), h = Math.round(H * R);
+      var seed = seedIn || 7;
+      function rand() {
         seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
         var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       }
-      function f(n) { return n.toFixed(1); }
-
-      var NS = "http://www.w3.org/2000/svg";
-      var layer = document.getElementById("charcoal-strokes");
-      var frag = document.createDocumentFragment();
-      // Slow drift in pressure down the page, like a hand pressing harder
-      // then easing off.
-      var press = 0;
-      for (var y = 36; y < 184; y += 3.6 + rand() * 1.8) {
-        press = Math.max(-0.18, Math.min(0.18, press + (rand() - 0.5) * 0.08));
-        var half = 4.6 + rand() * 2.4;
-        // Spans where both the top and bottom of the swipe are in the letter.
-        var spans = [], start = null;
-        for (var x = 30; x <= 975; x += 0.5) {
-          var ok = inside(x, y - half * 0.55) && inside(x, y + half * 0.55);
-          if (ok && start === null) start = x;
-          if (!ok && start !== null) { spans.push([start, x]); start = null; }
-        }
-        spans.forEach(function (sp) {
-          if (sp[1] - sp[0] < 1.5) return;
-          // Ragged, uneven ends; now and then a longer drag past the edge.
-          var x0 = sp[0] - rand() * 2.2 - (rand() < 0.06 ? 2 + rand() * 7 : 0);
-          var x1 = sp[1] + rand() * 2.2 + (rand() < 0.06 ? 2 + rand() * 7 : 0);
-          var slope = (rand() - 0.5) * 0.02;
-          var yc = y + (rand() - 0.5) * 1.2;
-          var top = [], bot = [];
-          var n = Math.max(2, Math.ceil((x1 - x0) / 7));
-          for (var i = 0; i <= n; i++) {
-            var xx = x0 + (x1 - x0) * i / n;
-            // Thinner at the ends, where the stick lifts off.
-            var edge = Math.min(1, Math.min(i, n - i) / 1.5 + 0.35);
-            var yy = yc + slope * (xx - x0);
-            top.push(f(xx + (rand() - 0.5) * 2) + " " + f(yy - half * edge + (rand() - 0.5) * 1.1));
-            bot.push(f(xx + (rand() - 0.5) * 2) + " " + f(yy + half * edge + (rand() - 0.5) * 1.1));
-          }
-          var el = document.createElementNS(NS, "path");
-          el.setAttribute("d", "M" + top.join("L") + "L" + bot.reverse().join("L") + "Z");
-          var a = 0.4 + rand() * 0.32 + press;
-          if (rand() < 0.08) a *= 0.7; // a lighter pass
-          el.setAttribute("fill-opacity", Math.max(0.15, Math.min(0.92, a)).toFixed(2));
-          frag.appendChild(el);
-        });
+      // Value noise tables
+      var P = new Float32Array(4096); for (var i = 0; i < 4096; i++) P[i] = rand();
+      function sm(t) { return t * t * (3 - 2 * t); }
+      function n1(x, o) { var i = Math.floor(x), f = sm(x - i); return P[(i + o) & 4095] * (1 - f) + P[(i + 1 + o) & 4095] * f; }
+      function n2(x, y, o) {
+        var ix = Math.floor(x), iy = Math.floor(y), fx = sm(x - ix), fy = sm(y - iy);
+        function g(a, b) { return P[((a * 73 + b * 151 + o) % 4096 + 4096) % 4096]; }
+        var a = g(ix, iy) * (1 - fx) + g(ix + 1, iy) * fx, b = g(ix, iy + 1) * (1 - fx) + g(ix + 1, iy + 1) * fx;
+        return a * (1 - fy) + b * fy;
       }
-      layer.appendChild(frag);
+      function fbm1(x, o) { return (n1(x, o) * 0.6 + n1(x * 2.1, o + 97) * 0.28 + n1(x * 4.3, o + 211) * 0.12); }
+      function fbm2(x, y, o) { return (n2(x, y, o) * 0.55 + n2(x * 2.2, y * 2.2, o + 31) * 0.3 + n2(x * 4.7, y * 4.7, o + 63) * 0.15); }
+
+      // 1. Letter mask
+      var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      var ctx = cv.getContext("2d");
+      ctx.setTransform(R, 0, 0, R, 0, 0); drawMask(ctx);
+      var src = ctx.getImageData(0, 0, w, h).data;
+      var M = new Float32Array(w * h);
+      // Wobble the silhouette a little while reading it.
+      for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+        var ux = x / R, uy = y / R;
+        var dx = (fbm2(ux * 0.04, uy * 0.04, 5) - 0.5) * 5, dy = (fbm2(ux * 0.04, uy * 0.04, 17) - 0.5) * 3;
+        var sx = Math.round(x + dx * R), sy = Math.round(y + dy * R);
+        M[y * w + x] = (sx >= 0 && sy >= 0 && sx < w && sy < h) ? src[(sy * w + sx) * 4 + 3] / 255 : 0;
+      }
+      // 2. Soft vertical edge (small vertical blur)
+      var vr = Math.max(1, Math.round(1.3 * R)), V = new Float32Array(w * h);
+      for (var x = 0; x < w; x++) {
+        var acc = 0;
+        for (var y = -vr; y < h + vr; y++) {
+          if (y + vr < h) acc += M[(y + vr) * w + x];
+          if (y - vr - 1 >= 0) acc -= M[(y - vr - 1) * w + x];
+          if (y >= 0 && y < h) V[y * w + x] = acc / (2 * vr + 1);
+        }
+      }
+      // 3. Feathered horizontal fingers: horizontal box blur, then a per-row threshold.
+      var hr = Math.round(10 * R), Hb = new Float32Array(w * h);
+      for (var y = 0; y < h; y++) {
+        var acc = 0, row = y * w;
+        for (var x = -hr; x < w + hr; x++) {
+          if (x + hr < w) acc += V[row + x + hr];
+          if (x - hr - 1 >= 0) acc -= V[row + x - hr - 1];
+          if (x >= 0 && x < w) Hb[row + x] = acc / (2 * hr + 1);
+        }
+      }
+      // Inside the letter, only let the edge break up within a few units of it,
+      // so narrow stems stay whole.
+      var hs = Math.round(4 * R), Hs = new Float32Array(w * h);
+      for (var y = 0; y < h; y++) {
+        var acc = 0, row = y * w;
+        for (var x = -hs; x < w + hs; x++) {
+          if (x + hs < w) acc += V[row + x + hs];
+          if (x - hs - 1 >= 0) acc -= V[row + x - hs - 1];
+          if (x >= 0 && x < w) Hs[row + x] = acc / (2 * hs + 1);
+        }
+      }
+      var out = ctx.createImageData(w, h), od = out.data;
+      for (var y = 0; y < h; y++) {
+        var uy = y / R;
+        for (var x = 0; x < w; x++) {
+          var ux = x / R, i = y * w + x;
+          var inner = V[i] >= 0.5;
+          var hb = inner ? Hs[i] : Hb[i];
+          if (hb <= 0.001) continue;
+          // Rows of brush hairs: threshold varies quickly with y, slowly with x;
+          // a slower row noise lets the odd finger run long.
+          var t = 0.5 + (fbm1(uy * 0.42 + n1(ux * 0.01, 300) * 2, 400) - 0.5) * 1.1
+                      + (n1(uy * 0.11, 450) - 0.5) * 0.5;
+          t += (rand() - 0.5) * 0.04; // grainy finger tips
+          // Each row either reaches out (a finger) or breaks in (a nibble).
+          t = Math.max(0.22, Math.min(0.75, t));
+          if (!inner && t > 0.5) continue;
+          var a = (hb - (t - 0.07)) / 0.14; a = a < 0 ? 0 : a > 1 ? 1 : sm(a);
+          a = Math.pow(a, 1.4); // no faint halos on the finger tips
+          a *= Math.min(1, V[i] * 1.6 + 0.35 * hb); // keep top/bottom edges soft but true
+          if (a <= 0.002) continue;
+          // Fine brush-hair texture everywhere; breaks up more where the brush runs dry.
+          var hair = fbm2(ux * 0.13, uy * 1.3, 520) - 0.5;
+          var dry = 1 - a; // 0 in the body, 1 at the very edge
+          a *= 1 - Math.max(0, -hair) * (0.2 + 1.3 * dry);
+          if (a <= 0.002) continue;
+          // Tone: broad wash patches, short broken pale streaks, soft mottling, grain.
+          var band = fbm1(uy * 0.03 + ux * 0.003, 600) - 0.5;
+          var patch = fbm2(ux * 0.025, uy * 0.05, 650) - 0.5;
+          var streak = fbm1(uy * 0.45 + n1(ux * 0.015, 700) * 3, 800);
+          var brk = n1(ux * 0.05 + uy * 0.3, 850);
+          var pale = Math.max(0, streak - 0.64) * 0.75 * sm(Math.max(0, Math.min(1, (brk - 0.45) * 2.5)));
+          var mot = fbm2(ux * 0.09, uy * 0.16, 900) - 0.5;
+          var grain = (rand() - 0.5) * 0.1;
+          var pool = Math.max(0, 1 - Math.abs(a - 0.7) / 0.25) * 0.14; // wet edge pooling
+          var rowTone = fbm1(uy * 0.28 + n1(ux * 0.02, 950) * 1.5, 960) - 0.5;
+          var d = 0.87 + rowTone * 0.32 + band * 0.32 + patch * 0.3 + hair * 0.22 + mot * 0.14 - pale + grain + pool;
+          d *= 0.85 + 0.15 * a; // lighter where the brush runs out
+          var ink = a * (d < 0 ? 0 : d > 0.97 ? 0.97 : d);
+          od[i * 4] = od[i * 4 + 1] = od[i * 4 + 2] = 20;
+          od[i * 4 + 3] = Math.round(ink * 255);
+        }
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h); ctx.putImageData(out, 0, 0);
+      return cv;
+    }
+
+    function buildCharcoal() {
+      var box = svg.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      var R = Math.max(1.2, Math.min(2.5, (box.width / 1000) * dpr * 1.1));
+      var cv = paintCharcoal(1000, 272, R, function (ctx) {
+        ctx.font = "800 176px 'Inter Tight', 'Helvetica Neue', Arial, sans-serif";
+        var sx = 920 / ctx.measureText("Braickish").width; // match textLength
+        ctx.translate(40, 178); ctx.scale(sx, 1);
+        ctx.fillText("Braickish", 0, 0);
+      }, 7);
+      document.getElementById("charcoal").setAttribute("href", cv.toDataURL("image/png"));
     }
 
     function ready(fn) {
